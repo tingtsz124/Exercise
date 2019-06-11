@@ -1,0 +1,384 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>mySnack</title>
+    <style>
+        #canvas{border: 1px  #000000 solid;
+            background: #9DE5F4;
+            display: inline;
+            margin-top: 80px;
+            margin-left:50px;
+            float:left;
+        }
+    </style>
+ <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
+
+    <!-- Bootstrap core CSS -->
+    <link href="dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="carousel.css" rel="stylesheet">
+</head>
+<header>
+      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <a class="navbar-brand" href="#">Exercise</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+              <li class="nav-item">
+              <a class="nav-link" href="RandomSelect.html">RandomSelect</a>
+              </li>  
+              <li class="nav-item">
+              <a class="nav-link" href="chooseclass.html">Chooseclass</a>
+            </li>
+               <li class="nav-item">
+              <a class="nav-link" href="mind_quiz.html">Mind Quiz</a>
+            </li>
+                 <li class="nav-item">
+              <a class="nav-link" href="simple_rpg.html">Simple RPG</a>
+            </li>
+                 <li class="nav-item">
+              <a class="nav-link" href="youtube.html">YouTube</a>
+            </li>
+              <li class="nav-item active">
+              <a class="nav-link" href="#">Game<span class="sr-only">(current)</span></a>
+            </li>
+              <li class="nav-item">
+              <a class="nav-link" href="aboutme.html">About me</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+<body>
+<!-- 畫出一個長450，寬450的矩形    -->
+<canvas id="canvas" width="300" height="300" ></canvas>
+
+<div id="message" style="border:1px solid black;width: 300px;height: 450px;margin-top: 80px;margin-right:100px;float:right">
+    <button id="pause">暫停</button> &nbsp;&nbsp;
+    <button  onclick="javascript:location.reload();" type="button">重新開始</button>
+    <div></div><br/>
+    <div>當前玩家：<span id="name"></span></div><br/>
+    <div>得分：<span id="score">0</span></div><br/>
+    <div><button id="historyScore_button" onclick="displayHistory()">歷史記錄</button>
+        <ul id="historyScore">
+        </ul>
+    </div>
+    <div><button id="ranking_button" onclick="displayRanking()"> 排行榜</button>
+        <ul id="ranking">
+        </ul>
+    </div>
+    <div>
+        <button id="clearStorage" onclick="clearStorage()">清除記錄</button>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript">
+    var canva = document.getElementById("canvas");
+    var ctx   = canva.getContext("2d");//它指定了二維繪圖，並且導致這個方法返回一個環境對象，該對象導出一個二維繪圖 API
+    var snakes = [];//定義蛇
+    var foodX = 0;       //食物X軸坐標
+    var foodY = 0;       //食物Y軸坐標
+    var snakecount = 6;
+    var size = 15;  //格子的長度
+    var interval = null;   //計時器
+    var toGo = 3;           //行進方向
+    var currentscore=0;//當前得分
+    var flag=false;//false表示當前用戶是新用戶,true為老用戶
+    var currentName;//當前用戶
+    var isPause=false;
+    window.onload = function(){
+        initMes();
+        start();
+        interval = setInterval(move,100);//間隔
+        document.onkeydown = function(event){
+            var event = event || window.event;
+            keydown(event.keyCode);
+        }
+    };
+    function clearStorage() {
+        localStorage.clear();
+        alert("記錄已清除");
+    }
+    function displayRanking() {
+        var historyMessage=JSON.parse(localStorage.getItem("messageStorage"));//用戶歷史信息
+        var ranking=new Array();
+        for(var i=0;i<historyMessage.length;i++) {
+            var player=historyMessage[i];
+            var name_highScore={};
+            var currentScore=player.score;//當前玩家歷史得分數組
+            var currentHighScore=currentScore[0];//當前玩家最高分
+            for(var j=0;j<currentScore.length;j++){
+                if(currentHighScore<currentScore[j])
+                {
+                    currentHighScore=currentScore[j];
+                }
+            }
+            name_highScore.name=player.name;
+            name_highScore.score=currentHighScore;
+            ranking.push(name_highScore); //將玩家以及對應的最高分組成的對象放入數組中
+        }
+
+        //對數組按照分數排序
+        var k, m, tmp;
+        for (k = 1; k < ranking.length; k++)
+        {
+            tmp = ranking[k];
+            m = k - 1;
+            while (m>=0 && tmp.score < ranking[m].score)
+            {
+                ranking[m + 1] = ranking[m];
+                m--;
+            }
+            ranking[m + 1] = tmp;
+        }
+//        console.log(ranking);
+        //創建結點
+        for(var f=ranking.length-1;f>=0;f--){
+            var ul=document.getElementById('ranking');
+            var li=document.createElement('li');
+            li.innerHTML="玩家："+ranking[f].name+"------最高分："+ranking[f].score;
+            ul.appendChild(li);
+        }
+
+    }
+    function displayHistory() {
+        var historyMessage=JSON.parse(localStorage.getItem("messageStorage"));//用戶歷史信息
+//        console.log("歷史記錄--》"+historyMessage);
+//        console.log(historyMessage.length);
+        var ul=document.getElementById('historyScore');
+        for(var i=0;i<historyMessage.length;i++) {
+            console.log(historyMessage[i].name);
+            if(historyMessage[i].name==currentName){
+                var score=historyMessage[i].score;
+                for(var j=1;j<score.length;j++){
+                    var li=document.createElement('li');
+                    li.innerHTML='第'+j+'次：'+score[j];
+                    ul.appendChild(li);
+                }
+                return;
+            }
+        }
+    }
+    //遊戲開始，初始化用戶信息
+    function initMes(){
+        var message_child={};
+        var historyMessage=JSON.parse(localStorage.getItem("messageStorage"));//用戶歷史信息
+//        console.log("初始化--》"+historyMessage);
+        currentName=prompt('請輸入你的名字：','');
+        if(currentName!=null && currentName!=''){
+            document.getElementById('name').innerHTML=currentName;
+        }
+        if(historyMessage != null){
+            for(var i=0;i<historyMessage.length;i++){
+                if(historyMessage[i].name===currentName){
+                    flag=true; //已經有該用戶
+//                    console.log("舊用戶");
+                }
+            }
+        }
+        if(!flag){//新用戶
+            console.log("新用戶");
+            message_child.name=currentName;
+            message_child.score=[0];
+            if(historyMessage==null){
+                historyMessage=new Array();//不僅是新用戶，而且該遊戲還沒有任何歷史記錄
+//                console.log("新用戶且該遊戲還沒有任何歷史記錄");
+            }
+            historyMessage.push(message_child);//將新用戶的信息對象放入數組中
+            localStorage.setItem("messageStorage",JSON.stringify(historyMessage));//存入本地
+
+//            console.log("新用戶加入--》"+JSON.parse(localStorage.getItem("messageStorage")));
+        }
+    }
+    //遊戲結束，更新用戶信息
+    function updataMes() {
+        var historyMessage=JSON.parse(localStorage.getItem("messageStorage"));//用戶歷史信息
+        console.log("遊戲結束--》"+historyMessage);
+//        console.log(historyMessage.length);
+
+        for(var i=0;i<historyMessage.length;i++){
+            if(historyMessage[i].name==currentName){
+                historyMessage[i].score.push(currentscore);
+                localStorage.setItem("messageStorage",JSON.stringify(historyMessage));//存入本地
+//                console.log(JSON.parse(localStorage.getItem("messageStorage"))[i].score);
+                return;
+            }
+        }
+    }
+    //創建畫布
+    function map(){
+        ctx.clearRect(0,0,300,300);//(x,y,width,height)，在給定的矩形中清除一個指定矩形（坐標和像素）
+        //畫出X軸線
+        for(var x=0;x<=30;x++){
+            ctx.moveTo(size*x,0); //開始位置
+            ctx.lineTo(x * size, 300);//結束位置
+            ctx.strokeStyle  = "#000000";//邊框顏色
+            ctx.stroke();
+        }
+        //畫出y軸線
+        for(var y=0;y<=30;y++){
+            ctx.moveTo(0,size*y); //開始位置
+            ctx.lineTo(300,y * size);//結束位置
+            ctx.strokeStyle  = "#000000";//邊框顏色
+            ctx.stroke();
+        }
+        //創建蛇
+        for (var i = 0; i < snakes.length; i++){
+            if(snakes[i] == snakes[snakes.length-1]){
+                ctx.beginPath();
+                ctx.fillStyle = "red";
+                ctx.fillRect(snakes[i].x, snakes[i].y, size, size);
+                ctx.moveTo(snakes[i].x, snakes[i].y);
+                ctx.lineTo(snakes[i].x + size, snakes[i].y);
+                ctx.lineTo(snakes[i].x + size, snakes[i].y + size);
+                ctx.lineTo(snakes[i].x, snakes[i].y + size);
+                ctx.closePath();
+                ctx.strokeStyle = "white";
+                ctx.stroke();
+            }else{
+                ctx.beginPath();
+                ctx.fillStyle = "green";
+                ctx.fillRect(snakes[i].x, snakes[i].y, size, size);
+                ctx.moveTo(snakes[i].x, snakes[i].y);
+                ctx.lineTo(snakes[i].x + size, snakes[i].y);
+                ctx.lineTo(snakes[i].x + size, snakes[i].y + size);
+                ctx.lineTo(snakes[i].x, snakes[i].y + size);
+                ctx.closePath();
+                ctx.strokeStyle = "white";
+                ctx.stroke();
+
+            }
+        }
+
+        //畫出食物
+        ctx.beginPath();
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(foodX, foodY, size, size);
+        ctx.moveTo(foodX, foodY);
+        ctx.lineTo(foodX + size, foodY);
+        ctx.lineTo(foodX + size, foodY + size);
+        ctx.lineTo(foodX, foodY + size);
+        ctx.closePath();
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+
+    }
+    //初始化
+    function start(){
+        //定義蛇
+        for(var i=0;i<snakecount;i++){
+            snakes[i]={x:i*size,y:0};
+        }
+        map();
+        addFood();
+
+    }
+
+    //隨機生成食物
+    function addFood(){
+        foodX = Math.floor(Math.random() * (15 - 1)) * size;
+        foodY = Math.floor(Math.random() * (15 - 1)) * size;
+    }
+
+    //添加蛇身
+    function addSnake(){
+        snakecount++;
+        snakes.unshift({x:size * 15, y:size * 15});
+    }
+
+    //吃到食物判斷
+    function isEat(){
+        if (snakes[snakecount - 1].x == foodX && snakes[snakecount - 1].y == foodY) {
+            currentscore++;
+            document.getElementById("score").innerHTML=currentscore;
+            addFood();
+            addSnake();
+        }
+    }
+
+    //移動函數
+    function move(){
+        switch(toGo){
+            case 1: //左邊
+                snakes.push({x: snakes[snakecount - 1].x - size, y: snakes[snakecount - 1].y});
+                break;
+            case 2: //上邊
+                snakes.push({x: snakes[snakecount - 1].x, y: snakes[snakecount - 1].y - size});
+                break;
+            case 3: //右邊
+                snakes.push({x: snakes[snakecount - 1].x + size, y: snakes[snakecount - 1].y});
+                break;
+            case 4: //下邊
+                snakes.push({x: snakes[snakecount - 1].x, y: snakes[snakecount - 1].y + size});
+//          case 5: //下邊
+//              snakes.push({x: snakes[snakecount - 1].x+ size, y: snakes[snakecount - 1].y + size});
+//
+                break;
+            default:;
+        }
+        snakes.shift();
+        isEat();
+        isDie();
+        map();
+    }
+
+    //交互響應函數
+    function keydown(keyCode){
+//        console.log(keyCode);
+        console.log(isPause);
+        switch(keyCode){
+            case 37: //左邊
+                if(toGo != 1 && toGo != 3)  toGo = 1;break;
+            case 38: //上邊
+                if(toGo != 2 && toGo != 4)  toGo = 2;break;
+            case 39: //右邊
+                if(toGo != 3 && toGo != 1)  toGo = 3;break;
+            case 40: //下的
+                if(toGo != 4 && toGo != 2)  toGo = 4;break;
+//          case 65: //右斜
+//                   toGo = 5;break;
+
+            case 80: //開始/暫停
+                if(isPause){
+                    interval = setInterval(move,100);
+                    isPause = false;
+                    document.getElementById('pause').innerHTML = "Pause";
+                }else{
+                    clearInterval(interval);
+                    isPause = true;
+                    document.getElementById('pause').innerHTML = "Start";
+                }
+                break;
+        }
+    }
+
+    //死亡判斷
+    function isDie(){
+        if(snakes[snakecount - 1].x == -15 || snakes[snakecount - 1].x == size * 20
+            || snakes[snakecount - 1].y == -15 || snakes[snakecount - 1].y == size * 20){
+            updataMes();
+            clearInterval(interval);
+            alert("Game Over!");
+        }
+        for(var i = 0; i < snakecount - 1; i++){
+            if(snakes[snakecount - 1].x == snakes[i].x && snakes[snakecount - 1].y == snakes[i].y){
+                updataMes();
+                clearInterval(interval);
+                alert("Game Over!");
+            }
+        }
+    }
+
+</script>
+</html>
