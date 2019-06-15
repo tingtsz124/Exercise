@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Caris's FinalProject</title>
     <style>
-        #canvas{border: 1px  #000000 solid;
-            background: #9DE5F4;
+        #canvas{border: 1px  #adadad solid;
+            background: #ffc1e0;
             display: inline;
             margin-top: 80px;
             margin-left:50px;
@@ -223,22 +223,22 @@
         for(var x=0;x<=30;x++){
             ctx.moveTo(size*x,0); //開始位置
             ctx.lineTo(x * size, 300);//結束位置
-            ctx.strokeStyle  = "#000000";//邊框顏色
+            ctx.strokeStyle  = "#adadad";//邊框顏色
             ctx.stroke();
         }
         //畫出y軸線
         for(var y=0;y<=30;y++){
             ctx.moveTo(0,size*y); //開始位置
             ctx.lineTo(300,y * size);//結束位置
-            ctx.strokeStyle  = "#000000";//邊框顏色
+            ctx.strokeStyle  = "#adadad";//邊框顏色
             ctx.stroke();
         }
         //創建蛇
         for (var i = 0; i < snakes.length; i++){
             if(snakes[i] == snakes[snakes.length-1]){
                 ctx.beginPath();
-                ctx.fillStyle = "red";
-                ctx.fillRect(snakes[i].x, snakes[i].y, size, size);
+                ctx.fillStyle = "#004b97";
+                ctx.fillRect(snakes[i].x, snakes[i].y, size, size); 
                 ctx.moveTo(snakes[i].x, snakes[i].y);
                 ctx.lineTo(snakes[i].x + size, snakes[i].y);
                 ctx.lineTo(snakes[i].x + size, snakes[i].y + size);
@@ -248,7 +248,7 @@
                 ctx.stroke();
             }else{
                 ctx.beginPath();
-                ctx.fillStyle = "green";
+                ctx.fillStyle = "#46a3ff    ";
                 ctx.fillRect(snakes[i].x, snakes[i].y, size, size);
                 ctx.moveTo(snakes[i].x, snakes[i].y);
                 ctx.lineTo(snakes[i].x + size, snakes[i].y);
@@ -263,7 +263,7 @@
 
         //畫出食物
         ctx.beginPath();
-        ctx.fillStyle = "yellow";
+        ctx.fillStyle = "#ea0000";
         ctx.fillRect(foodX, foodY, size, size);
         ctx.moveTo(foodX, foodY);
         ctx.lineTo(foodX + size, foodY);
